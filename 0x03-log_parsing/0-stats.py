@@ -1,39 +1,64 @@
 #!/usr/bin/python3
-"""
-script reads stdin line by line & computes metrics
-"""
-
 import sys
+import signal
 
-if __name__ == '__main__':
+# Global variables to store the total file size and the count of status codes
+total_size = 0
+status_codes_count = {
+    200: 0,
+    301: 0,
+    400: 0,
+    401: 0,
+    403: 0,
+    404: 0,
+    405: 0,
+    500: 0
+}
 
-    filesize, count = 0, 0
-    codes = ["200", "301", "400", "401", "403", "404", "405", "500"]
-    stats = {x: 0 for x in codes}
+# Function to print the statistics
+def print_stats():
+    global total_size, status_codes_count
+    print(f"File size: {total_size}")
+    for code in sorted(status_codes_count.keys()):
+        if status_codes_count[code] > 0:
+            print(f"{code}: {status_codes_count[code]}")
 
-    def print_stats(stats: dict, file_size: int) -> None:
-        print("File size: {:d}".format(filesize))
-        for x, u in sorted(stats.items()):
-            if u:
-                print("{}: {}".format(x, u))
+# Function to handle the keyboard interrupt signal
+def signal_handler(sig, frame):
+    print_stats()
+    sys.exit(0)
 
-    try:
-        for line in sys.stdin:
-            count += 1
-            data = line.split()
-            try:
-                status_code = data[-2]
-                if status_code in stats:
-                    stats[status_code] += 1
-            except BaseException:
-                pass
-            try:
-                filesize += int(data[-1])
-            except BaseException:
-                pass
-            if count % 10 == 0:
-                print_stats(stats, filesize)
-        print_stats(stats, filesize)
-    except KeyboardInterrupt:
-        print_stats(stats, filesize)
-        raise
+# Register the signal handler
+signal.signal(signal.SIGINT, signal_handler)
+
+# Main loop to read input and process lines
+line_count = 0
+try:
+    for line in sys.stdin:
+        parts = line.split()
+        if len(parts) != 7:
+            continue
+
+        ip, dash, date, request, http_version, status_code_str, file_size_str = parts
+        if not (request.startswith('"GET') and request.endswith('HTTP/1.1"')):
+            continue
+
+        try:
+            status_code = int(status_code_str)
+            file_size = int(file_size_str)
+        except ValueError:
+            continue
+
+        if status_code in status_codes_count:
+            status_codes_count[status_code] += 1
+            total_size += file_size
+
+        line_count += 1
+        if line_count % 10 == 0:
+            print_stats()
+
+except KeyboardInterrupt:
+    print_stats()
+    sys.exit(0)
+
+print_stats()
