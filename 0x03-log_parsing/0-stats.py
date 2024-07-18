@@ -3,18 +3,18 @@
 import sys
 
 
-def read_line(list_sc, total_file_size):
+def print_msg(dict_sc, total_file_size):
     """
-    Method that prints
+    Method to print
     Args:
-        list_sc: list of status codes
+        dict_sc: status codes dictionary
         total_file_size: total size of file
     Returns:
         Null
     """
 
     print("File size: {}".format(total_file_size))
-    for key, val in sorted(list_sc.items()):
+    for key, val in sorted(dict_sc.items()):
         if val != 0:
             print("{}: {}".format(key, val))
 
@@ -22,7 +22,7 @@ def read_line(list_sc, total_file_size):
 total_file_size = 0
 code = 0
 counter = 0
-list_sc = {"200": 0,
+dict_sc = {"200": 0,
            "301": 0,
            "400": 0,
            "401": 0,
@@ -33,7 +33,7 @@ list_sc = {"200": 0,
 
 try:
     for line in sys.stdin:
-        parsed_line = line.split()  # trimming
+        parsed_line = line.split()  # ✄ trimming
         parsed_line = parsed_line[::-1]  # inverting
 
         if len(parsed_line) > 2:
@@ -43,12 +43,12 @@ try:
                 total_file_size += int(parsed_line[0])  # file size
                 code = parsed_line[1]  # status code
 
-                if (code in list_sc.keys()):
-                    list_sc[code] += 1
+                if (code in dict_sc.keys()):
+                    dict_sc[code] += 1
 
             if (counter == 10):
-                read_line(list_sc, total_file_size)
+                print_msg(dict_sc, total_file_size)
                 counter = 0
 
 finally:
-    read_line(list_sc, total_file_size)
+    print_msg(dict_sc, total_file_size)
